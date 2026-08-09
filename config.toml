@@ -1,0 +1,9 @@
+in_memory_dataset_size_threshold_mb = 100
+
+[import]
+predicted_hash_policy = "29503:5;"
+
+[matrix]
+homeserver = "http://100.90.205.101:8008"
+username = "bot_002"
+password = "26qHRwulJf4jTDMzinBxeSroGUvKPtNg"

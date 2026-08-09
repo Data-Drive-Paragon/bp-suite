@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results{% endblock title %}
+
+{% block content %}
+<a href="/search">[back to search]</a>
+
+Search query: {{ phone }}
+
+== RESULTS ==
+
+{{ results_str | safe }}
+
+{% endblock content %}

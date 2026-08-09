@@ -1,0 +1,24 @@
+<clickhouse>
+    <!-- Change console log level to warning or error -->
+    <logger>
+        <level>warning</level>
+    </logger>
+
+    <!-- Disable internal database log tables -->
+    <query_log remove="remove"/>
+    <query_thread_log remove="remove"/>
+    <trace_log remove="remove"/>
+    <text_log remove="remove"/>
+    <metric_log remove="remove"/>
+    <asynchronous_metric_log remove="remove"/>
+    <session_log remove="remove"/>
+    <part_log remove="remove"/>
+
+    <!-- Stop logging individual queries -->
+    <profiles>
+        <default>
+            <log_queries>0</log_queries>
+            <log_query_threads>0</log_query_threads>
+        </default>
+    </profiles>
+</clickhouse>

@@ -1,0 +1,98 @@
+services:
+  coordinator_clickhouse:
+    image: clickhouse/clickhouse-server:22.3
+    ports:
+      - "38123:8123"
+      - "39000:9000"
+    environment:
+      CLICKHOUSE_USER: octagon
+      CLICKHOUSE_PASSWORD: 07ad63d98f4a1d79afd2dfa22cbbe4920df5
+      CLICKHOUSE_DB: octagon
+    volumes:
+      - ./clickhouse_config/config.d/disable_logs.xml:/etc/clickhouse-server/config.d/disable_logs.xml
+      - ch_data:/var/lib/clickhouse
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: tailscale
+    hostname: big-paragon
+    restart: always
+    network_mode: host
+    environment:
+      - TS_AUTHKEY=tskey-auth-kJPwGAGtth11CNTRL-Pf2YZWPkv7b2SEYM3iXw7bqp1nrQkBDZZ
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_EXTRA_ARGS=--accept-routes
+    volumes:
+      - tailscale_state:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+
+  big_paragon:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: big_paragon_api
+    restart: always
+    network_mode: host
+    depends_on:
+      - postgres_node_1
+      - postgres_node_2
+      - postgres_node_3
+      - coordinator_clickhouse
+      - tailscale
+    volumes:
+      - ./docker-compose.yml:/usr/src/app/docker-compose.yml
+      - ./big_paragon/config.toml:/app/config.toml
+      - ./big_paragon/config.toml:/usr/src/app/big_paragon_build/config.toml
+      - ./big_paragon/datasets:/app/datasets
+      - ./big_paragon/linkers:/app/linkers
+
+  postgres-octagon-extra:
+    image: postgres:18-alpine
+    container_name: postgres-octagon-extra
+    restart: always
+    ports:
+      - "21992:5432"
+    environment:
+      POSTGRES_USER: octagon
+      POSTGRES_PASSWORD: 7abd4f68488bb50ad5d7d35227d38be6b8d1b5f49328866a4c2bf52b40234d66
+      POSTGRES_DB: octagon_extra
+    volumes:
+      - pg_data_extra:/var/lib/postgresql
+
+  hami:
+    build:
+      context: ./hami
+      dockerfile: Dockerfile
+    container_name: hami_service
+    restart: always
+    ports:
+      - "21995:3000"
+    depends_on:
+      - postgres-octagon-extra
+    env_file:
+      - ./hami/.env
+
+  hami_bot:
+    build:
+      context: ./hami
+      dockerfile: Dockerfile
+    container_name: hami_bot
+    restart: always
+    command: ["bun", "run", "bot"]
+    depends_on:
+      - postgres-octagon-extra
+    env_file:
+      - ./hami/.env
+
+volumes:
+  ch_data:
+  pg_data_extra:
+  tailscale_state:

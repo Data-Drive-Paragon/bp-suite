@@ -1,0 +1,39 @@
+# Игнорируем гигабайтные папки с данными баз
+volumes/
+pg_data_*
+ch_data/
+
+# Игнорируем тяжелые папки компиляции Rust
+**/target/
+big_paragon/target/
+target/
+
+# Игнорируем гигантские архивы
+**/*.7z
+**/*.zip
+**/*.tar
+**/*.gz
+**/*.tgz
+**/*.rar
+
+# Игнорируем большие файлы данных (например, очищенные телеграмы)
+*.csv
+big_paragon/*.csv
+*.sql
+*.json
+
+# Но РАЗРЕШАЕМ мелкие файлы из папки datasets, которые нужны для работы API
+!big_paragon/datasets/*.csv
+!big_paragon/datasets/*.txt
+
+# Игнорируем служебные папки git и кэши
+.git/
+.gitignore
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+venv/
+.venv/
+env/

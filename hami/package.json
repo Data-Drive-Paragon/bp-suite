@@ -1,0 +1,23 @@
+{
+  "name": "hami",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "bun run index.ts",
+    "bot": "bun run bot.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "pino-pretty": "^13.1.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "kafkajs": "^2.2.4",
+    "pino": "^10.3.1",
+    "postgres": "^3.4.9",
+    "telegraf": "^4.16.3"
+  }
+}

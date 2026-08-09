@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Search Engine{% endblock title %}
+
+{% block content %}
+<style>
+    .search-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        min-height: 50vh;
+    }
+    .search-form {
+        width: 100%;
+        max-width: 600px;
+    }
+    .search-input {
+        width: 100%;
+        padding: 10px 15px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-family: 'Inconsolata', monospace;
+        font-size: 16px;
+        box-sizing: border-box; /* Ensures padding doesn't affect width */
+    }
+</style>
+
+<div class="search-container">
+    <form action="/search/results" method="get" class="search-form">
+        <input type="search" name="phone" placeholder="Phone number" class="search-input" autofocus>
+    </form>
+</div>
+{% endblock content %}

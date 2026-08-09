@@ -1,0 +1,9 @@
+<clickhouse>
+    <profiles>
+        <default>
+            <!-- Disable logging of queries for the default profile -->
+            <log_queries>0</log_queries>
+            <log_queries_min_type>EXCEPTION</log_queries_min_type>
+        </default>
+    </profiles>
+</clickhouse>
