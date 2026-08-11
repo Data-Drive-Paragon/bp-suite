@@ -13,6 +13,11 @@ pub struct JsonDriver {
 
 impl JsonDriver {
     pub fn new(path: &str) -> Result<Self> {
+        // Prevent path traversal attacks by rejecting paths containing '..'
+        let path_obj = std::path::Path::new(path);
+        if path_obj.components().any(|c| c == std::path::Component::ParentDir) {
+            return Err(anyhow::anyhow!("Invalid input: {}", path_obj.display()));
+        }
         let file = File::open(path).with_context(|| format!("Failed to open JSON file '{}'", path))?;
         let mut reader = BufReader::new(file);
 
