@@ -6,6 +6,7 @@ use std::path::Path;
 use tokio::sync::{Mutex, OnceCell};
 use tokio_postgres::{Client, NoTls};
 use crate::parser::SchemaMapping;
+use serde::Deserialize;
 
 static OCTAGON_POOL: OnceCell<Mutex<Octagon>> = OnceCell::const_new();
 
@@ -30,13 +31,77 @@ pub struct DbConfig {
     pub dbname: String,
 }
 
+#[derive(Deserialize)]
+struct PoolToml {
+    #[serde(rename = "postgres_node_1")]
+    postgres_node_1: Option<PoolConnection>,
+    #[serde(rename = "postgres_node_2")]
+    postgres_node_2: Option<PoolConnection>,
+    #[serde(rename = "postgres_node_3")]
+    postgres_node_3: Option<PoolConnection>,
+    #[serde(rename = "postgres_node_4")]
+    postgres_node_4: Option<PoolConnection>,
+    #[serde(rename = "postgres_octagon_extra")]
+    postgres_octagon_extra: Option<PoolConnection>,
+}
+
+#[derive(Deserialize)]
+struct PoolConnection {
+    host: String,
+    port: u16,
+    user: String,
+    password: String,
+    database: String,
+}
+
+fn get_connections_from_pool_toml(pool_path: &Path) -> Result<Vec<DbConfig>> {
+    let content = std::fs::read_to_string(pool_path)?;
+    let pool: PoolToml = toml::from_str(&content)?;
+
+    let mut db_configs = Vec::new();
+
+    let nodes = [
+        ("postgres_node_1", &pool.postgres_node_1),
+        ("postgres_node_2", &pool.postgres_node_2),
+        ("postgres_node_3", &pool.postgres_node_3),
+        ("postgres_node_4", &pool.postgres_node_4),
+    ];
+
+    for (name, conn) in nodes {
+        if let Some(c) = conn {
+            if !(29500..=29699).contains(&c.port) {
+                bail!("Port validation failed: Service '{}' uses port {}, which is outside the allowed range of 29500-29699.", name, c.port);
+            }
+
+            db_configs.push(DbConfig {
+                name: name.to_string(),
+                host: c.host.clone(),
+                port: c.port,
+                user: c.user.clone(),
+                pass: c.password.clone(),
+                dbname: c.database.clone(),
+            });
+        }
+    }
+
+    Ok(db_configs)
+}
+
 pub fn get_connections_from_docker_compose() -> Result<Vec<DbConfig>> {
+    // Try to read from pool.toml instead of docker-compose.yml
     let manifest_dir = env!("CARGO_MANIFEST_DIR");
+    let pool_path = Path::new(manifest_dir).join("pool.toml");
+
+    if pool_path.exists() {
+        return get_connections_from_pool_toml(&pool_path);
+    }
+
+    // Fallback to docker-compose.yml if pool.toml doesn't exist
     let workspace_dir = Path::new(manifest_dir).parent().unwrap();
     let compose_path = workspace_dir.join("docker-compose.yml");
 
     if !compose_path.exists() {
-        bail!("docker-compose.yml not found at {:?}", compose_path);
+        bail!("Neither pool.toml nor docker-compose.yml found");
     }
 
     let file = File::open(compose_path)?;

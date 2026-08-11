@@ -18,6 +18,7 @@ mod search;
 mod matrix_bot;
 mod matrix_commands;
 mod import_http_server;
+mod docker_manager;
 
 // Expose fastcsv module inside importer module
 #[path = "importer/fastcsv/mod.rs"]
@@ -142,6 +143,20 @@ enum Commands {
         #[command(subcommand)]
         search_command: SearchSubcommands,
     },
+    /// Start all Docker services defined in connector.toml and pool.toml
+    DockerStart {
+        /// Stop on first error (strict mode)
+        #[arg(long)]
+        strict: bool,
+        /// Start Tailscale service (internal only)
+        #[arg(long)]
+        internal_tailscale: bool,
+        /// Skip rebuilding Docker images, use existing ones
+        #[arg(long)]
+        no_rebuild: bool,
+    },
+    /// Stop all Docker services
+    DockerStop {},
 }
 
 #[derive(Subcommand)]
@@ -365,6 +380,12 @@ async fn main() -> anyhow::Result<()> {
                     search::run_cli_search(&octagon, "email", query, final_skip).await?;
                 }
             }
+        }
+        Commands::DockerStart { strict, internal_tailscale, no_rebuild } => {
+            docker_manager::start_services(*strict, *internal_tailscale, *no_rebuild)?;
+        }
+        Commands::DockerStop {} => {
+            docker_manager::stop_services()?;
         }
     };
 
