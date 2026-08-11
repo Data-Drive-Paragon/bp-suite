@@ -1,7 +1,7 @@
 use anyhow::{bail, Result, Context};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use std::path::Path;
+use std::path::{Path, Component};
 use crate::converters::Converter;
 
 #[derive(Debug, Clone)]
@@ -42,7 +42,12 @@ pub struct SchemaMapping {
 }
 
 pub fn parse_mk_file<P: AsRef<Path>>(path: P) -> Result<SchemaMapping> {
-    let file = File::open(path.as_ref()).with_context(|| format!("Failed to open .mk file at {:?}", path.as_ref()))?;
+    // Prevent path traversal attacks by rejecting paths containing '..'.
+    let path = path.as_ref();
+    if path.components().any(|c| c == Component::ParentDir) {
+        bail!("Invalid input: {}", path.display());
+    }
+    let file = File::open(path).with_context(|| format!("Failed to open .mk file at {:?}", path))?;
     let reader = BufReader::new(file);
 
     let mut fields = Vec::new();
