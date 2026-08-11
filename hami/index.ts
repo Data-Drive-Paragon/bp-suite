@@ -154,37 +154,50 @@ async function run() {
   });
 
   const port = parseInt(process.env.PORT || '3000', 10);
+  const apiKey = process.env.API_KEY;
+  
   Bun.serve({
     port,
     async fetch(req) {
       const url = new URL(req.url);
       if (url.pathname === '/api/mails/last' && req.method === 'GET') {
+        // Authentication check: require API key
+        if (apiKey) {
+          const providedKey = req.headers.get('X-API-Key');
+          if (!providedKey || providedKey !== apiKey) {
+            logger.warn({ path: url.pathname }, 'Unauthorized access attempt');
+            return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+              status: 401,
+              headers: { 'Content-Type': 'application/json' },
+            });
+          }
+        }
+
+        // Require email parameter to prevent global enumeration
         const email = url.searchParams.get('email');
+        if (!email) {
+          return new Response(JSON.stringify({ error: 'email parameter is required' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+
         const limitParam = parseInt(url.searchParams.get('limit') || '50', 10);
         const limit = Math.min(isNaN(limitParam) ? 50 : limitParam, 150);
 
         try {
-          let rows;
-          if (email) {
-            rows = await sql`
-              SELECT id, message_id, sender, recipient, subject, plain_body, html_body, raw_payload, created_at
-              FROM paragon_mails
-              WHERE sender = ${email} OR recipient = ${email}
-              ORDER BY id DESC
-              LIMIT ${limit}
-            `;
-          } else {
-            rows = await sql`
-              SELECT id, message_id, sender, recipient, subject, plain_body, html_body, raw_payload, created_at
-              FROM paragon_mails
-              ORDER BY id DESC
-              LIMIT ${limit}
-            `;
-          }
+          // Only return metadata, exclude sensitive fields (plain_body, html_body, raw_payload)
+          const rows = await sql`
+            SELECT id, message_id, sender, recipient, subject, created_at
+            FROM paragon_mails
+            WHERE sender = ${email} OR recipient = ${email}
+            ORDER BY id DESC
+            LIMIT ${limit}
+          `;
           return Response.json(rows);
         } catch (err: any) {
           logger.error(err, 'Failed to fetch mails');
-          return new Response(JSON.stringify({ error: err.message }), {
+          return new Response(JSON.stringify({ error: 'Internal server error' }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' },
           });
@@ -193,7 +206,7 @@ async function run() {
       return new Response('Not Found', { status: 404 });
     },
   });
-  logger.info({ port }, 'HTTP server started');
+  logger.info({ port, authEnabled: !!apiKey }, 'HTTP server started');
 }
 
 run().catch((err) => {
