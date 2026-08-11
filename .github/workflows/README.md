@@ -1,10 +1,19 @@
 # GitHub Actions Docker Build Workflow
 
-This workflow automatically builds and pushes Docker images to GitHub Container Registry (GHCR) on push to main/master branches or on manual trigger.
+This workflow automatically builds and pushes Docker images to Docker Hub on push to main/master branches or on manual trigger.
 
 ## Required GitHub Secrets
 
-No additional secrets are required! The workflow uses the built-in `GITHUB_TOKEN` which is automatically provided by GitHub Actions with the necessary permissions for pushing to the repository's container registry.
+Configure these secrets in your GitHub repository settings (Settings → Secrets and variables → Actions):
+
+### Docker Hub Secrets
+
+- **`DOCKER_USERNAME`**: Your Docker Hub username
+- **`DOCKER_TOKEN`**: Docker Hub Access Token (not password)
+  - Create at: Docker Hub → Account Settings → Security → New Access Token
+  - Required scopes: Read, Write, Delete
+- **`DOCKER_IMAGE_PATH`**: (Optional) Your Docker Hub image path (e.g., `your-username/your-project`)
+  - Defaults to `github.repository` if not set
 
 ## Workflow Triggers
 
@@ -18,23 +27,23 @@ The workflow runs on:
 The workflow builds and pushes two images:
 
 1. **Big Paragon**: Main application image
-   - Registry path: `ghcr.io/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/big-paragon`
+   - Registry path: `docker.io/{DOCKER_IMAGE_PATH}/big-paragon`
    - Tags: branch name, SHA, semver, latest
 
 2. **Hami**: Hami service image
-   - Registry path: `ghcr.io/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/hami`
+   - Registry path: `docker.io/{DOCKER_IMAGE_PATH}/hami`
    - Tags: branch name, SHA, semver, latest
 
 ## Using the Images
 
-After the workflow completes, you can pull the images from GitHub Container Registry:
+After the workflow completes, you can pull the images from Docker Hub:
 
 ```bash
 # Pull Big Paragon image
-docker pull ghcr.io/Data-Drive-Paragon/bp-suite/big-paragon:latest
+docker pull data-drive-paragon/bp-suite/big-paragon:latest
 
 # Pull Hami image
-docker pull ghcr.io/Data-Drive-Paragon/bp-suite/hami:latest
+docker pull data-drive-paragon/bp-suite/hami:latest
 ```
 
 ## Local Testing
@@ -55,6 +64,6 @@ act push
 
 To manually trigger the workflow:
 1. Go to Actions tab in GitHub
-2. Select "Build and Push Docker Images to GitLab Registry"
+2. Select "Build and Push Docker Images to Docker Hub"
 3. Click "Run workflow"
 4. Select branch and click "Run workflow"
