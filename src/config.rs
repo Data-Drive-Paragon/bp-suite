@@ -8,6 +8,7 @@ use anyhow::Context;
 #[derive(Deserialize, Debug, Clone)]
 pub struct ImportConfig {
     pub predicted_hash_policy: Option<String>,
+    pub api_key: Option<String>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
