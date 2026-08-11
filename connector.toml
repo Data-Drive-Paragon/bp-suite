@@ -1,38 +1,38 @@
 # PostgreSQL Node 1
 # Connection settings are in pool.toml
-# [postgres_node_1]
-# image = "postgres:18-alpine"
-# container_name = "pg_node_1"
-# host_port = 29501
-# container_port = 5432
-# volume = "pg_data_1:/var/lib/postgresql"
-# volume_type = "cifs"
-# volume_device = "//100.87.196.12/pg3-node1"
-# volume_options = "username=wireforce.usa@hotmail.com,password=rEkmoc-ginko2-rywjeg,vers=2.1,uid=70,gid=70,file_mode=0700,dir_mode=0700,cache=loose,rsize=1048576,wsize=1048576,actimeo=60,nostrictsync,noperm,nounix"
-# shm_size = "512mb"
-# shared_buffers = "256MB"
-# work_mem = "16MB"
-# maintenance_work_mem = "128MB"
-# effective_cache_size = "768MB"
-# max_wal_size = "2GB"
+[postgres_node_1]
+image = "postgres:18-alpine"
+container_name = "pg_node_1"
+host_port = 29501
+container_port = 5432
+volume = "pg_data_1:/var/lib/postgresql"
+volume_type = "cifs"
+volume_device = "//100.87.196.12/pg3-node1"
+volume_options = "username=wireforce.usa@hotmail.com,password=rEkmoc-ginko2-rywjeg,vers=2.1,uid=70,gid=70,file_mode=0700,dir_mode=0700,cache=loose,rsize=1048576,wsize=1048576,actimeo=60,nostrictsync,noperm,nounix"
+shm_size = "512mb"
+shared_buffers = "256MB"
+work_mem = "16MB"
+maintenance_work_mem = "128MB"
+effective_cache_size = "768MB"
+max_wal_size = "2GB"
 
-# # PostgreSQL Node 2
-# # Connection settings are in pool.toml
-# [postgres_node_2]
-# image = "postgres:18-alpine"
-# container_name = "pg_node_2"
-# host_port = 29502
-# container_port = 5432
-# volume = "pg_data_2:/var/lib/postgresql"
-# volume_type = "cifs"
-# volume_device = "//100.87.196.12/pg3-node2"
-# volume_options = "username=wireforce.usa@hotmail.com,password=rEkmoc-ginko2-rywjeg,vers=2.1,uid=70,gid=70,file_mode=0700,dir_mode=0700,cache=loose,rsize=1048576,wsize=1048576,actimeo=60,nostrictsync,noperm,nounix"
-# shm_size = "512mb"
-# shared_buffers = "256MB"
-# work_mem = "16MB"
-# maintenance_work_mem = "128MB"
-# effective_cache_size = "768MB"
-# max_wal_size = "2GB"
+# PostgreSQL Node 2
+# Connection settings are in pool.toml
+[postgres_node_2]
+image = "postgres:18-alpine"
+container_name = "pg_node_2"
+host_port = 29502
+container_port = 5432
+volume = "pg_data_2:/var/lib/postgresql"
+volume_type = "cifs"
+volume_device = "//100.87.196.12/pg3-node2"
+volume_options = "username=wireforce.usa@hotmail.com,password=rEkmoc-ginko2-rywjeg,vers=2.1,uid=70,gid=70,file_mode=0700,dir_mode=0700,cache=loose,rsize=1048576,wsize=1048576,actimeo=60,nostrictsync,noperm,nounix"
+shm_size = "512mb"
+shared_buffers = "256MB"
+work_mem = "16MB"
+maintenance_work_mem = "128MB"
+effective_cache_size = "768MB"
+max_wal_size = "2GB"
 
 # PostgreSQL Node 3
 # Connection settings are in pool.toml

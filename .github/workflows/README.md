@@ -67,3 +67,39 @@ To manually trigger the workflow:
 2. Select "Build and Push Docker Images to Docker Hub"
 3. Click "Run workflow"
 4. Select branch and click "Run workflow"
+
+## GitHub Releases
+
+When you create a GitHub Release, the workflow automatically:
+1. Builds and pushes Docker images to Docker Hub
+2. Exports the images as tarball files
+3. Uploads the tarballs as release assets
+
+### Creating a Release
+
+To create a release with Docker image artifacts:
+1. Go to Releases page in GitHub
+2. Click "Create a new release"
+3. Choose a tag version (e.g., v1.0.0)
+4. Add release notes
+5. Click "Publish release"
+
+The workflow will automatically attach:
+- `big-paragon-image.tar.gz` - Compressed Big Paragon Docker image
+- `hami-image.tar.gz` - Compressed Hami Docker image
+
+### Loading Images from Release
+
+To load Docker images from a release:
+
+```bash
+# Download the image from release assets
+wget https://github.com/Data-Drive-Paragon/bp-suite/releases/download/v1.0.0/big-paragon-image.tar.gz
+
+# Load into Docker
+docker load -i big-paragon-image.tar.gz
+
+# Tag and use
+docker tag <image-id> big-paragon:latest
+docker run big-paragon:latest
+```
