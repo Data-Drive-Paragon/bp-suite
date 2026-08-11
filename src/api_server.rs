@@ -38,6 +38,8 @@ struct UserQueryParams {
     table: Option<String>,
 }
 
+// DEPRECATED: Used by the removed handle_query_each endpoint.
+// Kept for reference only - do not use in new code.
 #[derive(Deserialize)]
 struct QueryEachParams {
     query: String,
@@ -60,7 +62,11 @@ pub async fn start_api(octagon: &'static Mutex<Octagon>, port: u16, ui: bool) ->
         .route("/search", get(search_page_handler))
         .route("/search/results", get(search_results_handler))
         .route("/api/user", get(handle_user_search))
-        .route("/api/query_each", post(handle_query_each))
+        // SECURITY: /api/query_each endpoint removed due to unauthenticated SQL injection vulnerability.
+        // The endpoint allowed arbitrary SELECT queries without authentication, enabling unauthorized
+        // database access. If query functionality is needed, implement proper authentication and use
+        // parameterized queries with a strict whitelist of allowed operations.
+        // .route("/api/query_each", post(handle_query_each))
         .route("/api/enroll", get(enroll_handler))
         .with_state(state);
 
@@ -86,7 +92,6 @@ async fn root_handler(State(state): State<ApiState>) -> impl IntoResponse {
         let mut context = TeraContext::new();
         let endpoints = [
             "GET /api/user?phone={phone_number}",
-            "POST /api/query_each",
             "GET /api/enroll",
         ];
         context.insert("endpoints", &endpoints.join("
@@ -104,7 +109,6 @@ async fn root_handler(State(state): State<ApiState>) -> impl IntoResponse {
             "message": "Welcome to Big Paragon API",
             "endpoints": [
                 "GET /api/user?phone={phone_number}",
-                "POST /api/query_each",
                 "GET /api/enroll",
             ]
         }))
@@ -477,6 +481,20 @@ async fn handle_user_search(
 }
 
 
+// SECURITY WARNING: This function is DEPRECATED and should NOT be exposed as an API endpoint.
+// It was removed from the router due to critical security vulnerabilities:
+// 1. No authentication or authorization checks
+// 2. Accepts arbitrary SQL queries from untrusted sources
+// 3. Weak validation (only checks for "select" prefix and small blacklist)
+// 4. Vulnerable to SQL injection via comments, CTEs, nested queries, etc.
+// 5. Exposes full database read access to any network-reachable attacker
+//
+// If query functionality is required in the future, implement:
+// - Strong authentication (API keys, OAuth, etc.)
+// - Authorization checks (role-based access control)
+// - Parameterized queries with strict whitelisting
+// - Query result limiting and rate limiting
+// - Comprehensive audit logging
 async fn handle_query_each(
     State(state): State<ApiState>,
     Json(payload): Json<QueryEachParams>,
