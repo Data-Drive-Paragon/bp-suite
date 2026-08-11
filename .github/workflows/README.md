@@ -1,17 +1,10 @@
 # GitHub Actions Docker Build Workflow
 
-This workflow automatically builds and pushes Docker images to GitLab Container Registry on push to main/master branches or on manual trigger.
+This workflow automatically builds and pushes Docker images to GitHub Container Registry (GHCR) on push to main/master branches or on manual trigger.
 
 ## Required GitHub Secrets
 
-Configure these secrets in your GitHub repository settings (Settings → Secrets and variables → Actions):
-
-### GitLab Registry Secrets
-
-- **`GITLAB_USERNAME`**: Your GitLab username
-- **`GITLAB_TOKEN`**: GitLab Personal Access Token with `read_registry` and `write_registry` scopes
-  - Create at: GitLab → User Settings → Access Tokens
-- **`GITLAB_IMAGE_PATH`**: Your GitLab project path (e.g., `your-username/your-project`)
+No additional secrets are required! The workflow uses the built-in `GITHUB_TOKEN` which is automatically provided by GitHub Actions with the necessary permissions for pushing to the repository's container registry.
 
 ## Workflow Triggers
 
@@ -25,23 +18,23 @@ The workflow runs on:
 The workflow builds and pushes two images:
 
 1. **Big Paragon**: Main application image
-   - Registry path: `registry.gitlab.com/{GITLAB_IMAGE_PATH}/big-paragon`
+   - Registry path: `ghcr.io/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/big-paragon`
    - Tags: branch name, SHA, semver, latest
 
 2. **Hami**: Hami service image
-   - Registry path: `registry.gitlab.com/{GITLAB_IMAGE_PATH}/hami`
+   - Registry path: `ghcr.io/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/hami`
    - Tags: branch name, SHA, semver, latest
 
 ## Using the Images
 
-After the workflow completes, you can pull the images from GitLab:
+After the workflow completes, you can pull the images from GitHub Container Registry:
 
 ```bash
 # Pull Big Paragon image
-docker pull registry.gitlab.com/{GITLAB_IMAGE_PATH}/big-paragon:latest
+docker pull ghcr.io/Data-Drive-Paragon/bp-suite/big-paragon:latest
 
 # Pull Hami image
-docker pull registry.gitlab.com/{GITLAB_IMAGE_PATH}/hami:latest
+docker pull ghcr.io/Data-Drive-Paragon/bp-suite/hami:latest
 ```
 
 ## Local Testing

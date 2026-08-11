@@ -1,4 +1,4 @@
-name: Build and Push Docker Images to GitLab Registry
+name: Build and Push Docker Images to GitHub Container Registry
 
 on:
   push:
@@ -12,10 +12,8 @@ on:
   workflow_dispatch:
 
 env:
-  GITLAB_REGISTRY: registry.gitlab.com
-  # Set your GitLab username and project path
-  # Example: GITLAB_IMAGE_PATH: your-username/your-project
-  GITLAB_IMAGE_PATH: ${{ secrets.GITLAB_IMAGE_PATH }}
+  GHCR_REGISTRY: ghcr.io
+  GHCR_IMAGE_PATH: ${{ github.repository }}
 
 jobs:
   build-and-push-big-paragon:
@@ -27,18 +25,18 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GitLab Container Registry
+      - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.GITLAB_REGISTRY }}
-          username: ${{ secrets.GITLAB_USERNAME }}
-          password: ${{ secrets.GITLAB_TOKEN }}
+          registry: ${{ env.GHCR_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata for Big Paragon
         id: meta-big-paragon
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.GITLAB_REGISTRY }}/${{ env.GITLAB_IMAGE_PATH }}/big-paragon
+          images: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE_PATH }}/big-paragon
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -67,18 +65,18 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GitLab Container Registry
+      - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.GITLAB_REGISTRY }}
-          username: ${{ secrets.GITLAB_USERNAME }}
-          password: ${{ secrets.GITLAB_TOKEN }}
+          registry: ${{ env.GHCR_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata for Hami
         id: meta-hami
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.GITLAB_REGISTRY }}/${{ env.GITLAB_IMAGE_PATH }}/hami
+          images: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE_PATH }}/hami
           tags: |
             type=ref,event=branch
             type=ref,event=pr
