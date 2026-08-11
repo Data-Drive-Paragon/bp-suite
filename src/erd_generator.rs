@@ -78,7 +78,13 @@ pub fn generate_erd(output_path: &str) -> Result<()> {
     mermaid_string.push_str("\n");
     mermaid_string.push_str(&relations);
 
-    let mut file = fs::File::create(output_path)?;
+    // Prevent path traversal attacks by rejecting paths containing '..'.
+    let output = Path::new(output_path);
+    if output.components().any(|c| c == std::path::Component::ParentDir) {
+        bail!("Invalid input: {}", output.display());
+    }
+
+    let mut file = fs::File::create(output)?;
 
     let explanation = r#"
 ### How Phones Are Linked & How to Perform a Global Search:

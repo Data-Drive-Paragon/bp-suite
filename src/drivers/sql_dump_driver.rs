@@ -31,7 +31,12 @@ impl SqlDumpDriver {
         let (actual_table_name, headers) = parse_columns_from_sql(file_path, &table_name)?;
         log::info!("SQL Dump Driver: Matched table '{}' with columns: {:?}", actual_table_name, headers);
 
-        let file = File::open(file_path)
+        // Prevent path traversal attacks by rejecting paths containing '..'.
+        let path = Path::new(file_path);
+        if path.components().any(|c| c == std::path::Component::ParentDir) {
+            bail!("Invalid input: {}", path.display());
+        }
+        let file = File::open(path)
             .with_context(|| format!("Failed to open SQL file at '{}'", file_path))?;
         let reader = BufReader::new(file);
 
@@ -268,7 +273,12 @@ fn parse_insert_statement_line(line: &str) -> Option<(String, Vec<String>)> {
 }
 
 fn parse_columns_from_sql_file(path: &str, table_name: &str) -> Result<(String, Vec<String>)> {
-    let file = File::open(path)?;
+    // Prevent path traversal attacks by rejecting paths containing '..'.
+    let path_obj = Path::new(path);
+    if path_obj.components().any(|c| c == std::path::Component::ParentDir) {
+        bail!("Invalid input: {}", path_obj.display());
+    }
+    let file = File::open(path_obj)?;
     let reader = BufReader::new(file);
 
     let mut columns = Vec::new();
@@ -362,13 +372,22 @@ fn parse_columns_from_sql(path: &str, table_name: &str) -> Result<(String, Strin
     
     if columns.is_empty() {
         // Search sibling .sql files in the same directory (very useful for split chunks)
-        if let Some(parent_dir) = Path::new(path).parent() {
+        // Prevent path traversal attacks by rejecting paths containing '..'.
+        let path_obj = Path::new(path);
+        if path_obj.components().any(|c| c == std::path::Component::ParentDir) {
+            bail!("Invalid input: {}", path_obj.display());
+        }
+        if let Some(parent_dir) = path_obj.parent() {
             if let Ok(entries) = std::fs::read_dir(parent_dir) {
                 for entry in entries {
                     if let Ok(entry) = entry {
                         let sibling_path = entry.path();
                         if sibling_path.is_file() && sibling_path.extension().and_then(|s| s.to_str()) == Some("sql") {
                             if sibling_path.to_str() != Some(path) {
+                                // Prevent path traversal attacks by rejecting paths containing '..'.
+                                if sibling_path.components().any(|c| c == std::path::Component::ParentDir) {
+                                    continue;
+                                }
                                 if let Ok((sibling_table, cols)) = parse_columns_from_sql_file(sibling_path.to_str().unwrap(), table_name) {
                                     if !cols.is_empty() {
                                         columns = cols;

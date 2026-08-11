@@ -14,7 +14,13 @@ pub fn detect_delimiter(csv_path: &str) -> Result<u8> {
         return Ok(b','); // SQL and SQLite drivers do not use delimiter anyway
     }
 
-    let file = std::fs::File::open(file_path)
+    // Prevent path traversal attacks by rejecting paths containing '..'.
+    let path = std::path::Path::new(file_path);
+    if path.components().any(|c| c == std::path::Component::ParentDir) {
+        return Err(anyhow::anyhow!("Invalid input: {}", path.display()));
+    }
+
+    let file = std::fs::File::open(path)
         .with_context(|| format!("Failed to open file for delimiter detection at '{}' (full input path: '{}')", file_path, csv_path))?;
     let reader = BufReader::new(file);
     let lines: Vec<String> = reader.lines().take(15).collect::<Result<Vec<_>, _>>()?;
