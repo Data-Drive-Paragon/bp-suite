@@ -16,6 +16,26 @@ struct PoolTomlMinimal {
 }
 
 #[derive(serde::Deserialize)]
+struct ConnectorTomlMinimal {
+    postgres_node_1: Option<ContainerInfo>,
+    postgres_node_2: Option<ContainerInfo>,
+    postgres_node_3: Option<ContainerInfo>,
+    postgres_node_4: Option<ContainerInfo>,
+    coordinator_clickhouse: Option<ContainerInfo>,
+    tailscale: Option<ContainerInfo>,
+    postgres_octagon_extra: Option<ContainerInfo>,
+    samba_coordinator: Option<ContainerInfo>,
+    big_paragon: Option<ContainerInfo>,
+    hami: Option<ContainerInfo>,
+    hami_bot: Option<ContainerInfo>,
+}
+
+#[derive(serde::Deserialize)]
+struct ContainerInfo {
+    container_name: String,
+}
+
+#[derive(serde::Deserialize)]
 struct NodeConn {
     host: String,
     port: u16,
@@ -68,43 +88,84 @@ pub async fn run_diagnostics() -> Result<()> {
 
     let mut docker_running = false;
     let mut failing_containers = Vec::new();
+    let mut running_project_count = 0;
+
     match docker_version_output {
         Ok(output) if output.status.success() => {
             let ver = String::from_utf8_lossy(&output.stdout);
             println!("    {} Docker CLI available: {}", green.apply_to("•"), ver.trim());
             
-            let ps_output = std::process::Command::new("docker")
-                .args(["ps", "-a", "--format", "{{.Names}}|{{.Status}}|{{.Ports}}"])
-                .output();
-
-            match ps_output {
-                Ok(ps) if ps.status.success() => {
-                    docker_running = true;
-                    let ps_str = String::from_utf8_lossy(&ps.stdout);
-                    let running_containers: Vec<&str> = ps_str
-                        .lines()
-                        .filter(|line| line.contains("Up"))
-                        .collect();
-                    
-                    println!("    {} Docker daemon is running ({} running containers found)", green.apply_to("•"), running_containers.len());
-                    for line in ps_str.lines() {
-                        let parts: Vec<&str> = line.split('|').collect();
-                        if parts.len() >= 2 {
-                            let name = parts[0].trim();
-                            let status = parts[1].trim();
-                            let is_up = status.starts_with("Up");
-                            if is_up {
-                                println!("  {} Container '{}': {}", green.apply_to("•"), name, green.apply_to(status));
-                            } else {
-                                println!("  {} Container '{}': {}", yellow.apply_to("⚑"), name, yellow.apply_to(status));
-                                failing_containers.push(name.to_string());
+            let connector_path = manifest_path.join("connector.toml");
+            let mut project_containers = Vec::new();
+            if connector_path.exists() {
+                if let Ok(content) = std::fs::read_to_string(&connector_path) {
+                    if let Ok(config) = toml::from_str::<ConnectorTomlMinimal>(&content) {
+                        let list = [
+                            config.postgres_node_1,
+                            config.postgres_node_2,
+                            config.postgres_node_3,
+                            config.postgres_node_4,
+                            config.coordinator_clickhouse,
+                            config.tailscale,
+                            config.postgres_octagon_extra,
+                            config.samba_coordinator,
+                            config.big_paragon,
+                            config.hami,
+                            config.hami_bot,
+                        ];
+                        for item in list {
+                            if let Some(c) = item {
+                                project_containers.push(c.container_name);
                             }
                         }
                     }
                 }
-                _ => {
-                    println!("  {} Docker daemon is not running or inaccessible.", red.apply_to("⚑"));
+            }
+            if project_containers.is_empty() {
+                project_containers = vec![
+                    "pg_node_1".into(),
+                    "pg_node_3".into(),
+                    "pg_node_4".into(),
+                    "coordinator_clickhouse".into(),
+                    "postgres-octagon-extra".into(),
+                    "samba-coordinator".into(),
+                    "big_paragon_api".into(),
+                    "hami_service".into(),
+                    "hami_bot".into(),
+                ];
+            }
+
+            docker_running = true;
+            let total_project_count = project_containers.len();
+
+            for name in &project_containers {
+                let status_output = std::process::Command::new("docker")
+                    .args(["ps", "-a", "--filter", &format!("name=^{}$", name), "--format", "{{.Status}}"])
+                    .output();
+
+                match status_output {
+                    Ok(out) if out.status.success() => {
+                        let status_str = String::from_utf8_lossy(&out.stdout).trim().to_string();
+                        if status_str.is_empty() {
+                            println!("  {} Container '{}': Not created", yellow.apply_to("⚑"), name);
+                            failing_containers.push(name.clone());
+                        } else if status_str.starts_with("Up") {
+                            running_project_count += 1;
+                        } else {
+                            println!("  {} Container '{}': {}", yellow.apply_to("⚑"), name, yellow.apply_to(&status_str));
+                            failing_containers.push(name.clone());
+                        }
+                    }
+                    _ => {
+                        println!("  {} Container '{}': Inspection failed", red.apply_to("⚑"), name);
+                        failing_containers.push(name.clone());
+                    }
                 }
+            }
+
+            println!("    {} Docker daemon is running ({} / {} project containers running)", green.apply_to("•"), running_project_count, total_project_count);
+            if failing_containers.is_empty() {
+                println!("    {} All project containers are healthy", green.apply_to("•"));
             }
         }
         _ => {
