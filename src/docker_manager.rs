@@ -621,8 +621,9 @@ fn start_hami(hami: &Hami, __strict: bool, no_rebuild: bool) -> Result<()> {
         log::info!("Building Hami image...");
         
         // Build image
+        let dockerfile_path = format!("{}/{}", hami.build_context, hami.dockerfile);
         let build_output = Command::new("docker")
-            .args(["build", "-t", image_name, "-f", &hami.dockerfile, &hami.build_context])
+            .args(["build", "-t", image_name, "-f", &dockerfile_path, &hami.build_context])
             .output()
             .context("Failed to build docker image")?;
         
