@@ -20,6 +20,7 @@ mod matrix_commands;
 mod import_http_server;
 mod docker_manager;
 mod doctor_diagnostics;
+mod paragon_stages_lang;
 
 // Expose fastcsv module inside importer module
 #[path = "importer/fastcsv/mod.rs"]

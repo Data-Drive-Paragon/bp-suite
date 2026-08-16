@@ -1,4 +1,5 @@
 use crate::octagon::{Octagon, DbConfig};
+use crate::paragon_stages_lang;
 use anyhow::{Result, Context};
 use axum::{
     routing::{get, post},
@@ -68,6 +69,7 @@ pub async fn start_api(octagon: &'static Mutex<Octagon>, port: u16, ui: bool) ->
         // parameterized queries with a strict whitelist of allowed operations.
         // .route("/api/query_each", post(handle_query_each))
         .route("/api/enroll", get(enroll_handler))
+        .route("/api/execute", post(handle_execute))
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port)).await
@@ -93,6 +95,7 @@ async fn root_handler(State(state): State<ApiState>) -> impl IntoResponse {
         let endpoints = [
             "GET /api/user?phone={phone_number}",
             "GET /api/enroll",
+            "POST /api/execute",
         ];
         context.insert("endpoints", &endpoints.join("
 "));
@@ -110,10 +113,19 @@ async fn root_handler(State(state): State<ApiState>) -> impl IntoResponse {
             "endpoints": [
                 "GET /api/user?phone={phone_number}",
                 "GET /api/enroll",
+                "POST /api/execute",
             ]
         }))
         .into_response()
     }
+}
+
+async fn handle_execute(
+    State(state): State<ApiState>,
+    AxumJson(payload): AxumJson<Value>,
+) -> impl IntoResponse {
+    let response_val = paragon_stages_lang::execute_workflow(state.octagon, &payload).await;
+    AxumJson(response_val).into_response()
 }
 
 async fn search_page_handler() -> impl IntoResponse {
@@ -560,4 +572,30 @@ async fn handle_query_each(
     }
 
     (axum::http::StatusCode::OK, AxumJson(Value::Object(response_map))).into_response()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_handle_execute_logic() {
+        let payload = serde_json::json!({
+            "stages": {
+                "stage1": {
+                    "source": { "type": "pg_stream", "raw": "SELECT 1" }
+                },
+                "stage2": {
+                    "transformer": { "type": "lua_script", "raw": "return data" }
+                }
+            }
+        });
+
+        let stages_val = payload.get("stages").unwrap();
+        assert!(stages_val.as_object().is_some());
+        let obj = stages_val.as_object().unwrap();
+        assert_eq!(obj.len(), 2);
+        assert!(obj.contains_key("stage1"));
+        assert!(obj.contains_key("stage2"));
+    }
 }

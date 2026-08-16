@@ -1,0 +1,3 @@
+[
+    { "source": { type: "pg_stream", raw: "SELECT * FROM ..." }, transformer: { type: "lua_script", raw: "" } }
+]
