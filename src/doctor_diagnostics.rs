@@ -26,22 +26,20 @@ struct NodeConn {
 }
 
 pub async fn run_diagnostics() -> Result<()> {
-    let cyan = Style::new().cyan();
     let green = Style::new().green();
     let yellow = Style::new().yellow();
     let red = Style::new().red();
     let bold = Style::new().bold();
+    let italic = Style::new().italic();
 
-    println!("{}", cyan.apply_to("Ω══════════════════════════════════════════════════════════Ω"));
-    println!("{}", bold.apply_to("   Ω Big Paragon System Doctor & Diagnostic Suite Ω"));
-    println!("{}", cyan.apply_to("Ω══════════════════════════════════════════════════════════Ω"));
+    println!("{}", bold.apply_to("Big Paragon System Doctor & Diagnostic Suite"));
     println!();
 
     let manifest_dir = env!("CARGO_MANIFEST_DIR");
     let manifest_path = Path::new(manifest_dir);
 
-    // 1. Configuration Files Check (Δ - Delta)
-    println!("{}", cyan.apply_to("Δ [Checking Configuration Files]"));
+    // 1. Configuration Files Check
+    println!("[Checking Configuration Files]");
     let files_to_check = [
         ("pool.toml", true),
         ("connector.toml", false),
@@ -62,8 +60,8 @@ pub async fn run_diagnostics() -> Result<()> {
     }
     println!();
 
-    // 2. Docker & Container Status Check (∇ - Nabla)
-    println!("{}", cyan.apply_to("∇ [Checking Docker Environment and Containers]"));
+    // 2. Docker & Container Status Check
+    println!("[Checking Docker Environment and Containers]");
     let docker_version_output = std::process::Command::new("docker")
         .arg("--version")
         .output();
@@ -113,8 +111,8 @@ pub async fn run_diagnostics() -> Result<()> {
     }
     println!();
 
-    // 3. TCP Port Connectivity Check (∫ - Integral)
-    println!("{}", cyan.apply_to("∫ [Checking Node TCP Port Connectivity]"));
+    // 3. TCP Port Connectivity Check
+    println!("[Checking Node TCP Port Connectivity]");
     let pool_path = manifest_path.join("pool.toml");
     if pool_path.exists() {
         if let Ok(content) = std::fs::read_to_string(&pool_path) {
@@ -154,22 +152,19 @@ pub async fn run_diagnostics() -> Result<()> {
     }
     println!();
 
-    // 4. Summary & Recommendations (Σ - Sigma)
-    println!("{}", cyan.apply_to("Σ══════════════════════════════════════════════════════════Ω"));
-    println!("{}", bold.apply_to("   Σ Diagnostic Summary & Recommendations                 Σ"));
-    println!("{}", cyan.apply_to("Σ══════════════════════════════════════════════════════════Ω"));
+    // 4. Summary & Recommendations
+    println!("[Diagnostic Summary & Recommendations]");
     if !docker_running {
         println!("  {} Docker daemon is not running or containers are down.", red.apply_to("⚑"));
-        println!("     Recommendation: Start Docker and run: cargo run docker-start");
+        println!("     Recommendation: Start Docker and run: {}", italic.apply_to("cargo run docker-start"));
     } else {
         println!("  {} If you encountered 'Connection refused' errors when running commands like", yellow.apply_to("⚑"));
         println!("     'storage-usage' or imports, it means the PostgreSQL/ClickHouse containers");
         println!("     are stopped or unreachable.");
-        println!("     To start all required services, run: cargo run docker-start");
-        println!("     To apply database index fixes, run:       cargo run doctor fix");
-        println!("     To optimize email/phone indexes, run:     cargo run doctor optimizeEmails");
+        println!("     To start all required services, run:       {}", italic.apply_to("cargo run docker-start"));
+        println!("     To apply database index fixes, run:       {}", italic.apply_to("cargo run doctor fix"));
+        println!("     To optimize email/phone indexes, run:     {}", italic.apply_to("cargo run doctor optimizeEmails"));
     }
-    println!("{}", cyan.apply_to("Ω══════════════════════════════════════════════════════════Ω"));
 
     Ok(())
 }
