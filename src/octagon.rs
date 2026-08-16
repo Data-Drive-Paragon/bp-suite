@@ -88,7 +88,13 @@ fn get_connections_from_pool_toml(pool_path: &Path) -> Result<Vec<DbConfig>> {
 }
 
 pub fn get_connections_from_docker_compose() -> Result<Vec<DbConfig>> {
-    // Try to read from pool.toml instead of docker-compose.yml
+    // Try to read from current directory pool.toml first (for container runtime)
+    let cwd_pool = Path::new("pool.toml");
+    if cwd_pool.exists() {
+        return get_connections_from_pool_toml(cwd_pool);
+    }
+
+    // Try to read from manifest dir pool.toml
     let manifest_dir = env!("CARGO_MANIFEST_DIR");
     let pool_path = Path::new(manifest_dir).join("pool.toml");
 

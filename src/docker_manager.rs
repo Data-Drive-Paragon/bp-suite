@@ -422,19 +422,30 @@ fn start_postgres_nodes(connector: &ConnectorConfig, pool: &PoolConfig, strict: 
             }
             
             // PostgreSQL config
-            let pg_config = format!(
-                "postgres -c fsync=off -c synchronous_commit=off -c full_page_writes=off \
-                 -c shared_buffers={} -c work_mem={} -c maintenance_work_mem={} \
-                 -c effective_cache_size={} -c max_wal_size={} -c checkpoint_completion_target=0.9{}",
-                node.shared_buffers,
-                node.work_mem,
-                node.maintenance_work_mem,
-                node.effective_cache_size,
-                node.max_wal_size,
-                node.checkpoint_timeout.as_ref().map(|t| format!(" -c checkpoint_timeout={}", t)).unwrap_or_default()
-            );
-            
-            cmd.args([&node.image, &pg_config]);
+            cmd.arg(&node.image);
+            cmd.arg("postgres");
+            cmd.arg("-c");
+            cmd.arg("fsync=off");
+            cmd.arg("-c");
+            cmd.arg("synchronous_commit=off");
+            cmd.arg("-c");
+            cmd.arg("full_page_writes=off");
+            cmd.arg("-c");
+            cmd.arg(&format!("shared_buffers={}", node.shared_buffers));
+            cmd.arg("-c");
+            cmd.arg(&format!("work_mem={}", node.work_mem));
+            cmd.arg("-c");
+            cmd.arg(&format!("maintenance_work_mem={}", node.maintenance_work_mem));
+            cmd.arg("-c");
+            cmd.arg(&format!("effective_cache_size={}", node.effective_cache_size));
+            cmd.arg("-c");
+            cmd.arg(&format!("max_wal_size={}", node.max_wal_size));
+            cmd.arg("-c");
+            cmd.arg("checkpoint_completion_target=0.9");
+            if let Some(timeout) = &node.checkpoint_timeout {
+                cmd.arg("-c");
+                cmd.arg(&format!("checkpoint_timeout={}", timeout));
+            }
             
             let output = cmd.output().context("Failed to run docker command")?;
             if !output.status.success() {
