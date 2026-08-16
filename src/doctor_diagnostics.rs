@@ -78,8 +78,8 @@ pub async fn run_diagnostics() -> Result<()> {
                             let name = parts[0];
                             let status = parts[1];
                             let is_up = status.starts_with("Up");
-                            let icon = if is_up { "🟢" } else { "🔴" };
-                            println!("    {} Container '{}': {}", icon, name, status);
+                            let prefix = if is_up { "    " } else { "  ⚑ " };
+                            println!("{}Container '{}': {}", prefix, name, status);
                         }
                     }
                 }
@@ -114,13 +114,13 @@ pub async fn run_diagnostics() -> Result<()> {
                         if let Ok(addr) = addr_str.parse::<SocketAddr>() {
                             match timeout(Duration::from_secs(1), TcpStream::connect(&addr)).await {
                                 Ok(Ok(_stream)) => {
-                                    println!("  🟢 [{}] {}:{} - Connected successfully", name, c.host, c.port);
+                                    println!("    [{}] {}:{} - Connected successfully", name, c.host, c.port);
                                 }
                                 Ok(Err(e)) => {
-                                    println!("  🔴 [{}] {}:{} - Connection failed: {} (Is the container running?)", name, c.host, c.port, e);
+                                    println!("  ⚑ [{}] {}:{} - Connection failed: {} (Is the container running?)", name, c.host, c.port, e);
                                 }
                                 Err(_) => {
-                                    println!("  🔴 [{}] {}:{} - Connection timed out (1s)", name, c.host, c.port);
+                                    println!("  ⚑ [{}] {}:{} - Connection timed out (1s)", name, c.host, c.port);
                                 }
                             }
                         }
@@ -140,10 +140,10 @@ pub async fn run_diagnostics() -> Result<()> {
     println!("   Diagnostic Summary & Recommendations           ");
     println!("==================================================");
     if !docker_running {
-        println!("  ❌ Docker daemon is not running or containers are down.");
+        println!("  ⚑ Docker daemon is not running or containers are down.");
         println!("     Recommendation: Start Docker and run: cargo run docker-start");
     } else {
-        println!("  ℹ️  If you encountered 'Connection refused' errors when running commands like");
+        println!("     If you encountered 'Connection refused' errors when running commands like");
         println!("     'storage-usage' or imports, it means the PostgreSQL/ClickHouse containers");
         println!("     are stopped or unreachable.");
         println!("     To start all required services, run: cargo run docker-start");
