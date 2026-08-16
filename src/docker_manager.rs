@@ -81,6 +81,8 @@ struct BigParagon {
     config_mount: String,
     datasets_mount: String,
     linkers_mount: String,
+    pool_mount: String,
+    connector_mount: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -609,6 +611,8 @@ fn start_big_paragon(bp: &BigParagon, __strict: bool, no_rebuild: bool) -> Resul
     cmd.args(["-v", &bp.config_mount]);
     cmd.args(["-v", &bp.datasets_mount]);
     cmd.args(["-v", &bp.linkers_mount]);
+    cmd.args(["-v", &bp.pool_mount]);
+    cmd.args(["-v", &bp.connector_mount]);
     cmd.arg("big_paragon_image");
     
     let output = cmd.output().context("Failed to run docker command")?;

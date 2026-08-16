@@ -120,6 +120,8 @@ dockerfile = "Dockerfile"
 config_mount = "./config.toml:/app/config.toml"
 datasets_mount = "./big_paragon/datasets:/app/datasets"
 linkers_mount = "./big_paragon/linkers:/app/linkers"
+pool_mount = "./pool.toml:/app/pool.toml"
+connector_mount = "./connector.toml:/app/connector.toml"
 depends_on = ["postgres_node_1", "postgres_node_2", "postgres_node_3", "coordinator_clickhouse", "tailscale"]
 
 # Hami Service

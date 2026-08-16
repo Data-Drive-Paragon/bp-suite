@@ -14,8 +14,5 @@ RUN mkdir -p ./linkers/
 FROM alpine:latest
 WORKDIR /app
 COPY --from=builder /usr/src/app/big_paragon_build/target/x86_64-unknown-linux-musl/release/big_paragon .
-COPY --from=builder /usr/src/app/datasets/ ./datasets/
-COPY --from=builder /usr/src/app/pool.toml ./pool.toml
-COPY --from=builder /usr/src/app/connector.toml ./connector.toml
-RUN mkdir -p ./linkers/
+RUN mkdir -p ./linkers/ ./datasets/
 CMD ["./big_paragon", "api", "--port", "5054", "--matrix"]
