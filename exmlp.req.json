@@ -1,3 +1,14 @@
-[
-    { "source": { type: "pg_stream", raw: "SELECT * FROM ..." }, transformer: { type: "lua_script", raw: "" } }
-]
+{
+    "stages": [
+        {
+            "source": {
+                "type": "pg_stream",
+                "raw": "SELECT * FROM ..."
+            },
+            "transformer": {
+                "type": "lua_script",
+                "raw": "return data"
+            }
+        }
+    ]
+}
