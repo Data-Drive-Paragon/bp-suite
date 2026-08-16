@@ -7,7 +7,7 @@ RUN mkdir -p ./big_paragon_build/src
 RUN echo 'fn main() {}' > ./big_paragon_build/src/main.rs
 RUN cp ./Cargo.toml ./big_paragon_build/Cargo.toml
 RUN cd ./big_paragon_build && cargo build --target=x86_64-unknown-linux-musl --release
-COPY src ./big_paragon_build/src
+RUN rm -rf ./big_paragon_build/src && cp -r ./src ./big_paragon_build/src
 RUN cd ./big_paragon_build && touch src/main.rs && cargo build --target=x86_64-unknown-linux-musl --release --bin big_paragon
 RUN mkdir -p ./linkers/
 
