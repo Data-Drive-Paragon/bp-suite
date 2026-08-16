@@ -19,6 +19,7 @@ mod matrix_bot;
 mod matrix_commands;
 mod import_http_server;
 mod docker_manager;
+mod doctor_diagnostics;
 
 // Expose fastcsv module inside importer module
 #[path = "importer/fastcsv/mod.rs"]
@@ -107,10 +108,10 @@ enum Commands {
     },
     /// Register connection profiles and launch sqlit TUI
     Sqlit {},
-    /// Parse and apply doctor.sql on all database nodes to automatically fix index coverage
+    /// Run system diagnostics or apply doctor.sql on all database nodes
     Doctor {
-        /// The action to perform (e.g., 'fix')
-        #[arg(default_value = "fix")]
+        /// The action to perform: 'check' (default), 'fix', 'optimizeEmails', 'optimizePhones'
+        #[arg(default_value = "check")]
         action: String,
     },
     /// Start the HTTP import server supporting batches of JSON records
@@ -268,7 +269,9 @@ async fn main() -> anyhow::Result<()> {
             sqlit_launcher::launch_sqlit(&octagon).await?;
         }
         Commands::Doctor { action } => {
-            if action == "fix" {
+            if action == "check" || action == "diagnose" || action == "health" || action.is_empty() {
+                doctor_diagnostics::run_diagnostics().await?;
+            } else if action == "fix" {
                 log::info!("Running doctor fix command...");
                 let paths_to_try = [
                     std::path::PathBuf::from("doctor.sql"),
@@ -321,7 +324,7 @@ async fn main() -> anyhow::Result<()> {
                 let octagon = pool.lock().await;
                 search::run_index_optimization(&octagon, action).await?;
             } else {
-                anyhow::bail!("Unknown doctor action: '{}'. Only 'fix', 'optimizeEmails', and 'optimizePhones' are supported.", action);
+                anyhow::bail!("Unknown doctor action: '{}'. Only 'check', 'fix', 'optimizeEmails', and 'optimizePhones' are supported.", action);
             }
         }
         Commands::ImportHttp { port } => {
