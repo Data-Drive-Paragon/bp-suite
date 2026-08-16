@@ -67,6 +67,7 @@ pub async fn run_diagnostics() -> Result<()> {
         .output();
 
     let mut docker_running = false;
+    let mut failing_containers = Vec::new();
     match docker_version_output {
         Ok(output) if output.status.success() => {
             let ver = String::from_utf8_lossy(&output.stdout);
@@ -96,6 +97,7 @@ pub async fn run_diagnostics() -> Result<()> {
                                 println!("  {} Container '{}': {}", green.apply_to("•"), name, green.apply_to(status));
                             } else {
                                 println!("  {} Container '{}': {}", yellow.apply_to("⚑"), name, yellow.apply_to(status));
+                                failing_containers.push(name.to_string());
                             }
                         }
                     }
@@ -158,6 +160,11 @@ pub async fn run_diagnostics() -> Result<()> {
         println!("  {} Docker daemon is not running or containers are down.", red.apply_to("⚑"));
         println!("     Recommendation: Start Docker and run: {}", italic.apply_to("cargo run docker-start"));
     } else {
+        if !failing_containers.is_empty() {
+            println!("  {} Found {} non-running/restarting container(s).", yellow.apply_to("⚑"), failing_containers.len());
+            println!("     To inspect container logs, run:             {}", italic.apply_to(&format!("docker logs {}", failing_containers[0])));
+            println!("     To inspect container details and exit code, run: {}", italic.apply_to(&format!("docker inspect {}", failing_containers[0])));
+        }
         println!("  {} If you encountered 'Connection refused' errors when running commands like", yellow.apply_to("⚑"));
         println!("     'storage-usage' or imports, it means the PostgreSQL/ClickHouse containers");
         println!("     are stopped or unreachable.");
