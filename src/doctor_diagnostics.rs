@@ -4,6 +4,7 @@ use std::path::Path;
 use std::time::Duration;
 use tokio::net::TcpStream;
 use tokio::time::timeout;
+use console::Style;
 
 #[derive(serde::Deserialize)]
 struct PoolTomlMinimal {
@@ -25,29 +26,44 @@ struct NodeConn {
 }
 
 pub async fn run_diagnostics() -> Result<()> {
-    println!("==================================================");
-    println!("   Big Paragon System Doctor & Diagnostic Suite   ");
-    println!("==================================================");
+    let cyan = Style::new().cyan();
+    let green = Style::new().green();
+    let yellow = Style::new().yellow();
+    let red = Style::new().red();
+    let bold = Style::new().bold();
+
+    println!("{}", cyan.apply_to("Ω══════════════════════════════════════════════════════════Ω"));
+    println!("{}", bold.apply_to("   Ω Big Paragon System Doctor & Diagnostic Suite Ω"));
+    println!("{}", cyan.apply_to("Ω══════════════════════════════════════════════════════════Ω"));
     println!();
 
     let manifest_dir = env!("CARGO_MANIFEST_DIR");
     let manifest_path = Path::new(manifest_dir);
 
-    // 1. Configuration Files Check
-    println!("[-] Checking Configuration Files...");
-    let files_to_check = ["pool.toml", "connector.toml", "config.toml", "doctor.sql"];
-    for filename in &files_to_check {
+    // 1. Configuration Files Check (Δ - Delta)
+    println!("{}", cyan.apply_to("Δ [Checking Configuration Files]"));
+    let files_to_check = [
+        ("pool.toml", true),
+        ("connector.toml", false),
+        ("config.toml", false),
+        ("doctor.sql", false),
+    ];
+    for (filename, required) in &files_to_check {
         let path = manifest_path.join(filename);
         if path.exists() {
-            println!("  [OK] Found '{}' at {:?}", filename, path);
+            println!("    {} Found '{}' at {:?}", green.apply_to("•"), filename, path);
         } else {
-            println!("  [WARN] Missing optional or required file '{}' at {:?}", filename, path);
+            if *required {
+                println!("  {} [{}] Missing required file '{}' at {:?}", red.apply_to("⚑"), filename, filename, path);
+            } else {
+                println!("  {} [{}] Missing optional file '{}' at {:?}", yellow.apply_to("⚑"), filename, filename, path);
+            }
         }
     }
     println!();
 
-    // 2. Docker & Container Status Check
-    println!("[-] Checking Docker Environment and Containers...");
+    // 2. Docker & Container Status Check (∇ - Nabla)
+    println!("{}", cyan.apply_to("∇ [Checking Docker Environment and Containers]"));
     let docker_version_output = std::process::Command::new("docker")
         .arg("--version")
         .output();
@@ -56,7 +72,7 @@ pub async fn run_diagnostics() -> Result<()> {
     match docker_version_output {
         Ok(output) if output.status.success() => {
             let ver = String::from_utf8_lossy(&output.stdout);
-            println!("  [OK] Docker CLI available: {}", ver.trim());
+            println!("    {} Docker CLI available: {}", green.apply_to("•"), ver.trim());
             
             let ps_output = std::process::Command::new("docker")
                 .args(["ps", "-a", "--format", "{{.Names}}|{{.Status}}|{{.Ports}}"])
@@ -71,31 +87,34 @@ pub async fn run_diagnostics() -> Result<()> {
                         .filter(|line| line.contains("Up"))
                         .collect();
                     
-                    println!("  [OK] Docker daemon is running ({} running containers found)", running_containers.len());
+                    println!("    {} Docker daemon is running ({} running containers found)", green.apply_to("•"), running_containers.len());
                     for line in ps_str.lines() {
                         let parts: Vec<&str> = line.split('|').collect();
                         if parts.len() >= 2 {
                             let name = parts[0];
                             let status = parts[1];
                             let is_up = status.starts_with("Up");
-                            let prefix = if is_up { "    " } else { "  ⚑ " };
-                            println!("{}Container '{}': {}", prefix, name, status);
+                            if is_up {
+                                println!("      • Container '{}': {}", name, green.apply_to(status));
+                            } else {
+                                println!("  {} Container '{}': {}", yellow.apply_to("⚑"), name, yellow.apply_to(status));
+                            }
                         }
                     }
                 }
                 _ => {
-                    println!("  [FAIL] Docker daemon is not running or inaccessible.");
+                    println!("  {} Docker daemon is not running or inaccessible.", red.apply_to("⚑"));
                 }
             }
         }
         _ => {
-            println!("  [WARN] Docker CLI not found or not in PATH.");
+            println!("  {} Docker CLI not found or not in PATH.", yellow.apply_to("⚑"));
         }
     }
     println!();
 
-    // 3. TCP Port Connectivity Check
-    println!("[-] Checking Node TCP Port Connectivity...");
+    // 3. TCP Port Connectivity Check (∫ - Integral)
+    println!("{}", cyan.apply_to("∫ [Checking Node TCP Port Connectivity]"));
     let pool_path = manifest_path.join("pool.toml");
     if pool_path.exists() {
         if let Ok(content) = std::fs::read_to_string(&pool_path) {
@@ -114,43 +133,43 @@ pub async fn run_diagnostics() -> Result<()> {
                         if let Ok(addr) = addr_str.parse::<SocketAddr>() {
                             match timeout(Duration::from_secs(1), TcpStream::connect(&addr)).await {
                                 Ok(Ok(_stream)) => {
-                                    println!("    [{}] {}:{} - Connected successfully", name, c.host, c.port);
+                                    println!("    {} [{}] {}:{} - Connected successfully", green.apply_to("•"), name, c.host, c.port);
                                 }
                                 Ok(Err(e)) => {
-                                    println!("  ⚑ [{}] {}:{} - Connection failed: {} (Is the container running?)", name, c.host, c.port, e);
+                                    println!("  {} [{}] {}:{} - Connection failed: {} (Is container running?)", red.apply_to("⚑"), name, c.host, c.port, e);
                                 }
                                 Err(_) => {
-                                    println!("  ⚑ [{}] {}:{} - Connection timed out (1s)", name, c.host, c.port);
+                                    println!("  {} [{}] {}:{} - Connection timed out (1s)", red.apply_to("⚑"), name, c.host, c.port);
                                 }
                             }
                         }
                     }
                 }
             } else {
-                println!("  [FAIL] Failed to parse pool.toml");
+                println!("  {} Failed to parse pool.toml", red.apply_to("⚑"));
             }
         }
     } else {
-        println!("  [INFO] pool.toml not found, skipping port connectivity checks.");
+        println!("  {} pool.toml not found, skipping port connectivity checks.", yellow.apply_to("⚑"));
     }
     println!();
 
-    // 4. Summary & Recommendations
-    println!("==================================================");
-    println!("   Diagnostic Summary & Recommendations           ");
-    println!("==================================================");
+    // 4. Summary & Recommendations (Σ - Sigma)
+    println!("{}", cyan.apply_to("Σ══════════════════════════════════════════════════════════Ω"));
+    println!("{}", bold.apply_to("   Σ Diagnostic Summary & Recommendations                 Σ"));
+    println!("{}", cyan.apply_to("Σ══════════════════════════════════════════════════════════Ω"));
     if !docker_running {
-        println!("  ⚑ Docker daemon is not running or containers are down.");
+        println!("  {} Docker daemon is not running or containers are down.", red.apply_to("⚑"));
         println!("     Recommendation: Start Docker and run: cargo run docker-start");
     } else {
-        println!("     If you encountered 'Connection refused' errors when running commands like");
+        println!("  {} If you encountered 'Connection refused' errors when running commands like", yellow.apply_to("⚑"));
         println!("     'storage-usage' or imports, it means the PostgreSQL/ClickHouse containers");
         println!("     are stopped or unreachable.");
         println!("     To start all required services, run: cargo run docker-start");
         println!("     To apply database index fixes, run:       cargo run doctor fix");
         println!("     To optimize email/phone indexes, run:     cargo run doctor optimizeEmails");
     }
-    println!("==================================================");
+    println!("{}", cyan.apply_to("Ω══════════════════════════════════════════════════════════Ω"));
 
     Ok(())
 }
