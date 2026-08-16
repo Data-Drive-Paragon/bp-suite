@@ -89,11 +89,11 @@ pub async fn run_diagnostics() -> Result<()> {
                     for line in ps_str.lines() {
                         let parts: Vec<&str> = line.split('|').collect();
                         if parts.len() >= 2 {
-                            let name = parts[0];
-                            let status = parts[1];
+                            let name = parts[0].trim();
+                            let status = parts[1].trim();
                             let is_up = status.starts_with("Up");
                             if is_up {
-                                println!("      • Container '{}': {}", name, green.apply_to(status));
+                                println!("  {} Container '{}': {}", green.apply_to("•"), name, green.apply_to(status));
                             } else {
                                 println!("  {} Container '{}': {}", yellow.apply_to("⚑"), name, yellow.apply_to(status));
                             }
