@@ -1,4 +1,5 @@
 [postgres_node_1]
+enable = false
 host = "localhost"
 port = 29501
 user = "octagon"
@@ -6,6 +7,7 @@ password = "7abd4f68488bb50ad5d7d35227d38be6b8d1b5f49328866a4c2bf52b40234d66"
 database = "octagon"
 
 #[postgres_node_2]
+#enable = false
 #host = "localhost"
 #port = 29502
 #user = "octagon"
@@ -13,6 +15,7 @@ database = "octagon"
 #database = "octagon"
 
 [postgres_node_3]
+enable = false
 host = "localhost"
 port = 29503
 user = "octagon"
@@ -20,6 +23,7 @@ password = "7abd4f68488bb50ad5d7d35227d38be6b8d1b5f49328866a4c2bf52b40234d66"
 database = "octagon"
 
 [postgres_node_4]
+enable = false
 host = "localhost"
 port = 29504
 user = "octagon"
@@ -27,6 +31,7 @@ password = "7abd4f68488bb50ad5d7d35227d38be6b8d1b5f49328866a4c2bf52b40234d66"
 database = "octagon"
 
 [postgres_octagon_extra]
+enable = false
 host = "localhost"
 port = 21992
 user = "octagon"
